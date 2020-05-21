@@ -1,0 +1,236 @@
+#!/bin/bash
+
+# v0.1
+
+## prerequisites: git jq
+
+export PROJECT=$(gcloud projects list --filter='project_id~qwiklabs-gcp' --format=value'(project_id)')
+
+export REGION=europe-west1
+export ZONE=europe-west1-b
+export AX_REGION=europe-west1
+
+export CLUSTER=hybrid-cluster
+
+export HYBRID_VERSION=1.2.0
+export HYBRID_TARBALL=apigeectl_linux_64.tar.gz
+export HYBRID_HOME=$PWD
+
+export ORG=$PROJECT
+export ENV=test
+
+gcloud config set project $PROJECT
+
+function token { echo -n "$(gcloud config config-helper --force-auth-refresh | grep access_token | grep -o -E '[^ ]+$')" ; }
+export -f token
+
+
+# example: wait_for_ready "ready" 'cat ready.txt' "File is ready."
+function wait_for_ready(){
+    local status=$1
+    local action=$2
+    local message=$3
+
+    while true; do
+        local signal=$(eval "$action")
+        if [ $(echo $status) = "$signal" ]; then
+            echo -e "\n$message"
+            break
+        fi
+        echo -n "."
+        sleep 5
+    done
+}
+
+
+
+
+gcloud services enable apigee.googleapis.com
+gcloud services enable apigeeconnect.googleapis.com
+
+
+## FORK: Create cluster
+gcloud container clusters create $CLUSTER --machine-type "n1-standard-4" --num-nodes "3" --cluster-version "1.14" --zone $ZONE --async
+
+
+# create organization
+curl -H "Authorization: Bearer $(token)" -H "Content-Type:application/json"  "https://apigee.googleapis.com/v1/organizations?parent=projects/$PROJECT" --data-binary @- <<EOT
+{
+    "name": "$PROJECT",
+    "display_name": "$PROJECT",
+    "description": "Qwiklab student org $PROJECT",
+    "analyticsRegion": "$AX_REGION"
+}
+EOT
+
+## JOIN: create org
+wait_for_ready "\"$ORG\"" 'curl --silent -H "Authorization: Bearer $(token)" -H "Content-Type: application/json"  https://apigee.googleapis.com/v1/organizations/$ORG | jq ".name"' "Organization $ORG is created." 
+
+
+ 
+
+# Create environment
+curl -H "Authorization: Bearer $(token)" -H "Content-Type: application/json"  https://apigee.googleapis.com/v1/organizations/$PROJECT/environments --data-binary @- <<EOT
+{
+  "name": "$ENV",
+  "description": "$ENV environment",
+  "displayName": "$ENV"
+}
+EOT
+
+## JOIN: env is created
+wait_for_ready "\"$ENV\"" 'curl --silent -H "Authorization: Bearer $(token)" -H "Content-Type: application/json"  https://apigee.googleapis.com/v1/organizations/$ORG/environments/$ENV | jq ".name"' "Environment $ENV of Organization $ORG is created." 
+
+
+## JOIN: cluster
+wait_for_ready "RUNNING" 'gcloud container clusters describe hybrid-cluster --zone $ZONE --format="value(status)"' 'The cluster is ready.'
+
+
+
+gcloud container clusters get-credentials $CLUSTER --zone $ZONE
+
+kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
+
+
+
+curl -LO https://storage.googleapis.com/apigee-public/apigee-hybrid-setup/$HYBRID_VERSION/$HYBRID_TARBALL
+
+tar -xvf $HYBRID_TARBALL
+
+export APIGEECTL_HOME=$HYBRID_HOME/$(tar tf $HYBRID_HOME/$HYBRID_TARBALL | grep VERSION.txt | cut -d "/" -f 1)
+
+export PATH=$APIGEECTL_HOME:$PATH
+
+#
+# runtime
+#
+
+
+# api endpoint router ip
+gcloud compute addresses create runtime-ip --region $REGION
+
+export RUNTIME_IP=$(gcloud compute addresses describe runtime-ip --region $REGION --format='value(address)')
+
+export RUNTIME_HOST_ALIAS=api.exco.com
+export RUNTIME_SSL_CERT=$HYBRID_HOME/exco-hybrid-crt.pem
+export RUNTIME_SSL_KEY=$HYBRID_HOME/exco-hybrid-key.pem
+
+openssl req -x509 -out $RUNTIME_SSL_CERT -keyout $RUNTIME_SSL_KEY -newkey rsa:2048 -nodes -sha256 -subj '/CN=api.exco.com' -extensions EXT -config <( printf "[dn]\nCN=api.exco.com\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:api.exco.com\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
+
+#
+# mart (to be ignored)
+#
+
+gcloud compute addresses create mart-ip --region $REGION
+
+export MART_IP=$(gcloud compute addresses describe mart-ip --region $REGION --format='value(address)')
+
+export MART_HOST_ALIAS=mart.exco.com
+export MART_SSL_CERT=$HYBRID_HOME/exco-hybrid-crt.pem
+export MART_SSL_KEY=$HYBRID_HOME/exco-hybrid-key.pem
+
+
+
+
+ 
+
+#
+# create SAs
+#
+export SA_DIR=$PWD/service-accounts
+for c in apigee-cassandra apigee-logger apigee-mart apigee-metrics apigee-synchronizer apigee-udca; do
+
+   C_VAR=$(echo $c | awk '{print toupper(substr($0, index($0,"-")+1)) "_SA"}')
+
+    export $C_VAR=$SA_DIR/$PROJECT-$c.json
+    echo y | $APIGEECTL_HOME/tools/create-service-account $c $SA_DIR
+done
+
+
+
+
+
+# setsync $SYNCHRONIZER_SA_ID
+curl -X POST -H "Authorization: Bearer $(token)" -H "Content-Type:application/json" "https://apigee.googleapis.com/v1/organizations/$ORG:setSyncAuthorization" --data-binary @- <<EOF
+{
+    "identities": [  "serviceAccount:apigee-synchronizer@$PROJECT.iam.gserviceaccount.com" ]
+}
+EOF
+
+
+
+# configure apigeeConnect 
+ORG_PROPERTIES=$( curl --silent -X GET -H "Content-Type: application/json" -H "Authorization: Bearer $(token)" https://apigee.googleapis.com/v1/organizations/$ORG )
+
+ORG_PROPERTIES=$( echo $ORG_PROPERTIES | jq ".properties.property |= (map(.name) | index(\"$PROPERTY\") ) as \$ix | if \$ix then .[\$ix][\"value\"]=\"$VALUE\" else . + [{name: \"features.mart.apigee.connect.enabled\", value:\"true\"}] end" )
+
+curl --silent -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer $(token)" https://apigee.googleapis.com/v1/organizations/$ORG --data-binary @- <<EOF
+$ORG_PROPERTIES
+EOF
+
+
+# Apigee Connect Agent role to apigee-mart SA
+gcloud projects add-iam-policy-binding $PROJECT --member serviceAccount:apigee-mart@$PROJECT.iam.gserviceaccount.com --role roles/apigeeconnect.Agent
+
+# Apigee Organization Role
+gcloud projects add-iam-policy-binding $PROJECT --member user:$(gcloud config list --format='value(core.account)') --role roles/apigee.admin
+
+#
+
+cat <<EOT >>envsubst > $HYBRID_HOME/runtime-config.yaml
+gcp:
+  region: $REGION
+  projectID: $PROJECT
+
+k8sCluster:
+  name: $CLUSTER
+  region: $REGION
+
+org: $ORG
+
+virtualhosts:
+  - name: default
+    hostAliases:
+      - "$RUNTIME_HOST_ALIAS"
+    sslCertPath: $RUNTIME_SSL_CERT
+    sslKeyPath: $RUNTIME_SSL_KEY
+    routingRules:
+      - paths:
+        - /
+        env: $ENV
+
+envs:
+  - name: $ENV
+    serviceAccountPaths:
+      synchronizer: $SYNCHRONIZER_SA
+      udca: $UDCA_SA
+
+mart:
+  hostAlias: "$MART_HOST_ALIAS"
+  serviceAccountPath: $MART_SA
+  sslCertPath: $MART_SSL_CERT
+  sslKeyPath: $MART_SSL_KEY
+
+connectAgent:
+  enabled: true
+  serviceAccountPath: $MART_SA
+
+metrics:
+  serviceAccountPath: $METRICS_SA
+
+ingress:
+  enableAccesslog: true
+  runtime:
+    loadBalancerIP: $RUNTIME_IP
+  mart:
+    loadBalancerIP: $MART_IP
+EOT
+
+(cd $APIGEECTL_HOME; apigeectl init -f $HYBRID_HOME/runtime-config.yaml)
+
+wait_for_ready "0" '(cd $APIGEECTL_HOME; apigeectl check-ready  -f $HYBRID_HOME/runtime-config.yaml); echo $?' "apigeectl init: done."
+
+(cd $APIGEECTL_HOME; apigeectl apply -f $HYBRID_HOME/runtime-config.yaml)
+
+wait_for_ready "0" '(cd $APIGEECTL_HOME; apigeectl check-ready  -f $HYBRID_HOME/runtime-config.yaml); echo $?' "apigeectl apply: done."
+

@@ -2,7 +2,10 @@
 
 ## TODO:
 [ ] provide logical and debug output for operations as required
+
 [ ] 'harden' the script
+
+[ ] next step: deploy the ping proxy
 
 
 ## Install Runtime
@@ -23,6 +26,9 @@ bin/rewind.sh | tee /tmp/rewind.log
 
 
 ## Test Request
+
+
+Help yourself to create a simple [or complex] proxy and deploy it.
 
 To re-use the curl request verbatim, ie, copy-and-paste, this is a minumal setup that would populate environment variables used in the curl.
 

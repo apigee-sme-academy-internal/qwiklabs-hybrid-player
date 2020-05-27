@@ -1,10 +1,17 @@
 #!/bin/bash
 
+set -e
+
 # v0.1
 
 ## prerequisites: git jq
 
-export PROJECT=$(gcloud projects list --filter='project_id~qwiklabs-gcp' --format=value'(project_id)')
+if [ -z "$PROJECT" ]; then
+    echo "Project variable PROJECT is required."
+    exit 1
+fi
+
+echo "Set up environment variables and project id..."
 
 export REGION=europe-west1
 export ZONE=europe-west1-b
@@ -19,7 +26,7 @@ export HYBRID_HOME=$PWD
 export ORG=$PROJECT
 export ENV=test
 
-gcloud config set project $PROJECT
+gcloud config set project $PROJECT > /dev/null
 
 function token { echo -n "$(gcloud config config-helper --force-auth-refresh | grep access_token | grep -o -E '[^ ]+$')" ; }
 export -f token
@@ -44,14 +51,19 @@ function wait_for_ready(){
 
 
 
+echo "Enabling required APIs..."
 
-gcloud services enable apigee.googleapis.com
-gcloud services enable apigeeconnect.googleapis.com
+gcloud services enable compute.googleapis.com container.googleapis.com apigee.googleapis.com apigeeconnect.googleapis.com cloudresourcemanager.googleapis.com
 
 
-## FORK: Create cluster
-gcloud container clusters create $CLUSTER --machine-type "n1-standard-4" --num-nodes "3" --cluster-version "1.14" --zone $ZONE --async
-
+#CLUSTER_EXISTS=$(gcloud container clusters list --project $PROJECT --zone $ZONE --filter='name=hybrid-cluster')
+#if [ -z "CLUSTER_EXISTS" ]; then
+#echo "Starting cluster creation..."
+    ## FORK: Create cluster
+set +e
+    gcloud container clusters create $CLUSTER --machine-type "n1-standard-4" --num-nodes "3" --cluster-version "1.14" --zone $ZONE --async
+set -e
+#fi
 
 # create organization
 curl -H "Authorization: Bearer $(token)" -H "Content-Type:application/json"  "https://apigee.googleapis.com/v1/organizations?parent=projects/$PROJECT" --data-binary @- <<EOT
@@ -82,6 +94,7 @@ EOT
 wait_for_ready "\"$ENV\"" 'curl --silent -H "Authorization: Bearer $(token)" -H "Content-Type: application/json"  https://apigee.googleapis.com/v1/organizations/$ORG/environments/$ENV | jq ".name"' "Environment $ENV of Organization $ORG is created." 
 
 
+echo "Cluster creation..."
 ## JOIN: cluster
 wait_for_ready "RUNNING" 'gcloud container clusters describe hybrid-cluster --zone $ZONE --format="value(status)"' 'The cluster is ready.'
 
@@ -89,8 +102,9 @@ wait_for_ready "RUNNING" 'gcloud container clusters describe hybrid-cluster --zo
 
 gcloud container clusters get-credentials $CLUSTER --zone $ZONE
 
+set +e
 kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
-
+set -e
 
 
 curl -LO https://storage.googleapis.com/apigee-public/apigee-hybrid-setup/$HYBRID_VERSION/$HYBRID_TARBALL
@@ -107,9 +121,12 @@ export PATH=$APIGEECTL_HOME:$PATH
 
 
 # api endpoint router ip
-gcloud compute addresses create runtime-ip --region $REGION
-
-export RUNTIME_IP=$(gcloud compute addresses describe runtime-ip --region $REGION --format='value(address)')
+RUNTIME_IP=$(gcloud compute addresses describe runtime-ip --region $REGION --format='value(address)')
+if [ "$RUNTIME_IP" = "" ]; then
+    gcloud compute addresses create runtime-ip --region $REGION
+    RUNTIME_IP=$(gcloud compute addresses describe runtime-ip --region $REGION --format='value(address)')
+fi
+export RUNTIME_IP
 
 export RUNTIME_HOST_ALIAS=api.exco.com
 export RUNTIME_SSL_CERT=$HYBRID_HOME/exco-hybrid-crt.pem
@@ -121,9 +138,12 @@ openssl req -x509 -out $RUNTIME_SSL_CERT -keyout $RUNTIME_SSL_KEY -newkey rsa:20
 # mart (to be ignored)
 #
 
-gcloud compute addresses create mart-ip --region $REGION
-
-export MART_IP=$(gcloud compute addresses describe mart-ip --region $REGION --format='value(address)')
+MART_IP=$(gcloud compute addresses describe mart-ip --region $REGION --format='value(address)')
+if [ "$MART_IP" = "" ]; then
+    gcloud compute addresses create mart-ip --region $REGION
+    MART_IP=$(gcloud compute addresses describe mart-ip --region $REGION --format='value(address)')
+fi
+export MART_IP
 
 export MART_HOST_ALIAS=mart.exco.com
 export MART_SSL_CERT=$HYBRID_HOME/exco-hybrid-crt.pem

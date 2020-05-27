@@ -10,16 +10,22 @@
 
 ## Install Runtime
 
-The `rewind.sh` script is self-containted. It works in a qwiklabs vanilla environment.
+The `rewind.sh` script is self-containted. It works in a QwikLabs or a GCP project vanilla environment.
 
-Just create an empty lab; clone this repo; execute the script.
+Just create an empty lab; clone this repo; setup PROJECT variable appropriately and execute the script.
 
 Of course, a duration of the lab is not an ideal development environment. 
 
 The plan is for us is to create a project in an experimental-gke folder and create our hybrid cluster and other course artifacts there. That will provide durability for our project. This script should work in any project with no or minimal configuration changes (ie, if you're not happy with a default region and zone or cluster node specification). Eventually we will add necessary parameters to an infocation script.
 
+> __NOTE:__ In case of QwikLabs project, following command can be used to populate the PROJECT variable:
+> ```
+> export PROJECT=$(gcloud projects list --filter='project_id~qwiklabs-gcp' --format=value'(project_id)')
+> ```
+
 
 ```
+export PROJECT=<project-id>
 bin/rewind.sh | tee /tmp/rewind.log
 ```
 
@@ -28,7 +34,7 @@ bin/rewind.sh | tee /tmp/rewind.log
 ## Test Request
 
 
-Help yourself to create a simple [or complex] proxy and deploy it.
+You can use suppled ping proxy and proxies/deploy.sh script to upload simple test proxy to experiment with it.
 
 To re-use the curl request verbatim, ie, copy-and-paste, this is a minumal setup that would populate environment variables used in the curl.
 

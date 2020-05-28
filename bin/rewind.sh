@@ -21,7 +21,10 @@ export CLUSTER=hybrid-cluster
 
 export HYBRID_VERSION=1.2.0
 export HYBRID_TARBALL=apigeectl_linux_64.tar.gz
-export HYBRID_HOME=$PWD
+export HYBRID_HOME=~/$PROJECT
+
+mkdir $HYBRID_HOME
+
 
 export ORG=$PROJECT
 export ENV=test
@@ -121,7 +124,9 @@ export PATH=$APIGEECTL_HOME:$PATH
 
 
 # api endpoint router ip
+set +e
 RUNTIME_IP=$(gcloud compute addresses describe runtime-ip --region $REGION --format='value(address)')
+set -e
 if [ "$RUNTIME_IP" = "" ]; then
     gcloud compute addresses create runtime-ip --region $REGION
     RUNTIME_IP=$(gcloud compute addresses describe runtime-ip --region $REGION --format='value(address)')
@@ -132,13 +137,16 @@ export RUNTIME_HOST_ALIAS=api.exco.com
 export RUNTIME_SSL_CERT=$HYBRID_HOME/exco-hybrid-crt.pem
 export RUNTIME_SSL_KEY=$HYBRID_HOME/exco-hybrid-key.pem
 
-openssl req -x509 -out $RUNTIME_SSL_CERT -keyout $RUNTIME_SSL_KEY -newkey rsa:2048 -nodes -sha256 -subj '/CN=api.exco.com' -addext basicConstraints=critical,CA:TRUE,pathlen:1 -extensions EXT -config <( printf "[dn]\nCN=api.exco.com\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:api.exco.com\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
+openssl req -x509 -out $RUNTIME_SSL_CERT -keyout $RUNTIME_SSL_KEY -newkey rsa:2048 -nodes -sha256 -subj '/CN=api.exco.com' -extensions EXT -config <( printf "[dn]\nCN=api.exco.com\n[req]\ndistinguished_name=dn\n[EXT]\nbasicConstraints=critical,CA:TRUE,pathlen:1\nsubjectAltName=DNS:api.exco.com\nkeyUsage=digitalSignature,keyCertSign\nextendedKeyUsage=serverAuth")
+
 
 #
 # mart (to be ignored)
 #
 
+set +e
 MART_IP=$(gcloud compute addresses describe mart-ip --region $REGION --format='value(address)')
+set -e
 if [ "$MART_IP" = "" ]; then
     gcloud compute addresses create mart-ip --region $REGION
     MART_IP=$(gcloud compute addresses describe mart-ip --region $REGION --format='value(address)')

@@ -132,7 +132,7 @@ export RUNTIME_HOST_ALIAS=api.exco.com
 export RUNTIME_SSL_CERT=$HYBRID_HOME/exco-hybrid-crt.pem
 export RUNTIME_SSL_KEY=$HYBRID_HOME/exco-hybrid-key.pem
 
-openssl req -x509 -out $RUNTIME_SSL_CERT -keyout $RUNTIME_SSL_KEY -newkey rsa:2048 -nodes -sha256 -subj '/CN=api.exco.com' -extensions EXT -config <( printf "[dn]\nCN=api.exco.com\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:api.exco.com\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
+openssl req -x509 -out $RUNTIME_SSL_CERT -keyout $RUNTIME_SSL_KEY -newkey rsa:2048 -nodes -sha256 -subj '/CN=api.exco.com' -addext basicConstraints=critical,CA:TRUE,pathlen:1 -extensions EXT -config <( printf "[dn]\nCN=api.exco.com\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:api.exco.com\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
 
 #
 # mart (to be ignored)

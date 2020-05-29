@@ -23,7 +23,7 @@ export HYBRID_VERSION=1.2.0
 export HYBRID_TARBALL=apigeectl_linux_64.tar.gz
 export HYBRID_HOME=~/$PROJECT
 
-mkdir $HYBRID_HOME
+mkdir -p $HYBRID_HOME
 
 
 export ORG=$PROJECT
@@ -110,9 +110,13 @@ kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-ad
 set -e
 
 
+(
+cd $HYBRID_HOME
 curl -LO https://storage.googleapis.com/apigee-public/apigee-hybrid-setup/$HYBRID_VERSION/$HYBRID_TARBALL
 
-tar -xvf $HYBRID_TARBALL
+tar -xvf $HYBRID_HOME/$HYBRID_TARBALL
+)
+
 
 export APIGEECTL_HOME=$HYBRID_HOME/$(tar tf $HYBRID_HOME/$HYBRID_TARBALL | grep VERSION.txt | cut -d "/" -f 1)
 
@@ -165,7 +169,7 @@ export MART_SSL_KEY=$HYBRID_HOME/exco-hybrid-key.pem
 #
 # create SAs
 #
-export SA_DIR=$PWD/service-accounts
+export SA_DIR=$HYBRID_HOME/service-accounts
 for c in apigee-cassandra apigee-logger apigee-mart apigee-metrics apigee-synchronizer apigee-udca; do
 
    C_VAR=$(echo $c | awk '{print toupper(substr($0, index($0,"-")+1)) "_SA"}')

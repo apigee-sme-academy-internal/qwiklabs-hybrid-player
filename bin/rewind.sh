@@ -13,9 +13,9 @@ fi
 
 echo "Set up environment variables and project id..."
 
-export REGION=europe-west1
-export ZONE=europe-west1-b
-export AX_REGION=europe-west1
+export REGION=${REGION:-europe-west1}
+export ZONE=${ZONE:-europe-west1-b}
+export AX_REGION=${AX_REGION:-europe-west1}
 
 export CLUSTER=hybrid-cluster
 

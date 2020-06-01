@@ -52,6 +52,15 @@ function wait_for_ready(){
     done
 }
 
+function get_account() {
+  ACCOUNT=$(gcloud config list --format='value(core.account)')
+  gcloud iam service-accounts describe $ACCOUNT &> /dev/null
+  if [ $? -eq 0 ] ; then
+    echo "serviceAccount:$ACCOUNT"
+    return
+  fi
+  echo "user:$ACCOUNT"
+}
 
 
 echo "Enabling required APIs..."
@@ -205,7 +214,7 @@ EOF
 gcloud projects add-iam-policy-binding $PROJECT --member serviceAccount:apigee-mart@$PROJECT.iam.gserviceaccount.com --role roles/apigeeconnect.Agent
 
 # Apigee Organization Role
-gcloud projects add-iam-policy-binding $PROJECT --member user:$(gcloud config list --format='value(core.account)') --role roles/apigee.admin
+gcloud projects add-iam-policy-binding $PROJECT --member $(get_account) --role roles/apigee.admin
 
 #
 

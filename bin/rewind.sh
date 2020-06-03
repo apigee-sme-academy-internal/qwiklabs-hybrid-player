@@ -13,9 +13,9 @@ fi
 
 echo "Set up environment variables and project id..."
 
-export REGION=europe-west1
-export ZONE=europe-west1-b
-export AX_REGION=europe-west1
+export REGION=${REGION:-europe-west1}
+export ZONE=${ZONE:-europe-west1-b}
+export AX_REGION=${AX_REGION:-europe-west1}
 
 export CLUSTER=hybrid-cluster
 
@@ -23,7 +23,7 @@ export HYBRID_VERSION=1.2.0
 export HYBRID_TARBALL=apigeectl_linux_64.tar.gz
 export HYBRID_HOME=~/$PROJECT
 
-mkdir $HYBRID_HOME
+mkdir -p $HYBRID_HOME
 
 
 export ORG=$PROJECT
@@ -52,6 +52,15 @@ function wait_for_ready(){
     done
 }
 
+function get_account() {
+  ACCOUNT=$(gcloud config list --format='value(core.account)')
+  gcloud iam service-accounts describe $ACCOUNT &> /dev/null
+  if [ $? -eq 0 ] ; then
+    echo "serviceAccount:$ACCOUNT"
+    return
+  fi
+  echo "user:$ACCOUNT"
+}
 
 
 echo "Enabling required APIs..."
@@ -110,9 +119,13 @@ kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-ad
 set -e
 
 
+(
+cd $HYBRID_HOME
 curl -LO https://storage.googleapis.com/apigee-public/apigee-hybrid-setup/$HYBRID_VERSION/$HYBRID_TARBALL
 
-tar -xvf $HYBRID_TARBALL
+tar -xvf $HYBRID_HOME/$HYBRID_TARBALL
+)
+
 
 export APIGEECTL_HOME=$HYBRID_HOME/$(tar tf $HYBRID_HOME/$HYBRID_TARBALL | grep VERSION.txt | cut -d "/" -f 1)
 
@@ -165,7 +178,7 @@ export MART_SSL_KEY=$HYBRID_HOME/exco-hybrid-key.pem
 #
 # create SAs
 #
-export SA_DIR=$PWD/service-accounts
+export SA_DIR=$HYBRID_HOME/service-accounts
 for c in apigee-cassandra apigee-logger apigee-mart apigee-metrics apigee-synchronizer apigee-udca; do
 
    C_VAR=$(echo $c | awk '{print toupper(substr($0, index($0,"-")+1)) "_SA"}')
@@ -201,7 +214,7 @@ EOF
 gcloud projects add-iam-policy-binding $PROJECT --member serviceAccount:apigee-mart@$PROJECT.iam.gserviceaccount.com --role roles/apigeeconnect.Agent
 
 # Apigee Organization Role
-gcloud projects add-iam-policy-binding $PROJECT --member user:$(gcloud config list --format='value(core.account)') --role roles/apigee.admin
+gcloud projects add-iam-policy-binding $PROJECT --member $(get_account) --role roles/apigee.admin
 
 #
 

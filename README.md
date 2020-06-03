@@ -5,8 +5,15 @@
 
 [ ] 'harden' the script
 
-[ ] next step: deploy the ping proxy
+[x] next step: deploy the ping proxy
 
+[ ] repl env-create to ahr
+
+[ ] probes for runtime and trace readiness
+ 
+[ ] fix envsubst 0b file creation
+
+[ ] for some vars like REGION, ZONE, make defaults if not defined
 
 ## Install Runtime
 
@@ -23,10 +30,62 @@ The plan is for us is to create a project in an experimental-gke folder and crea
 > export PROJECT=$(gcloud projects list --filter='project_id~qwiklabs-gcp' --format=value'(project_id)')
 > ```
 
+## Open a qwiklabs instance
 
+?. TODO: [ ] a class in gsp
+
+?. Activate CloudShell
+
+## Set up github access
+?. As ours is currently a private repo, configure ssh access key
 ```
-export PROJECT=<project-id>
-bin/rewind.sh | tee /tmp/rewind.log
+mkdir -p ~/.ssh
+vi ~/.ssh/id_github-sme
+```
+?. Insert your valid key
+
+?. Configure ssh
+```
+cat <<EOT >> ~/.ssh/config
+Host github.com-sme
+    HostName github.com
+    IdentityFile ~/.ssh/id_github
+    User git
+EOT
+```
+?. permissions
+```
+chmod 400 ~/.ssh/id_github-sme
+chmod 400 ~/.ssh/config
+```
+?. ssh-agent configuration
+```
+eval `ssh-agent`
+ssh-add ~/.ssh/id_github-sme
+```
+
+## Install Runtime
+
+?. Clone the repo
+```
+git clone git@github.com:apigee-sme-academy-internal/qwiklabs-hybrid-player.git
+```
+?. Configure PLAYER_HOME and PATH
+```
+export PLAYER_HOME=~/qwiklabs-hybrid-player
+export PATH=$PLAYER_HOME/bin:$PATH
+```
+?. Configure PROJECT variable
+```
+export PROJECT=$(gcloud projects list --filter='project_id~qwiklabs-gcp' --format=value'(project_id)')
+```
+?. Minimal Hybrid Runtime install steps
+```
+time rewind.sh | tee $HYBRID_HOME/rewind.log
+```
+?. Deploy test proxy
+```
+time $PLAYER_HOME/proxies/deploy.sh |  tee $HYBRID_HOME/deploy.log
 ```
 
 
@@ -43,7 +102,7 @@ To re-use the curl request verbatim, ie, copy-and-paste, this is a minumal setup
 export PROJECT=$(gcloud projects list --filter='project_id~qwiklabs-gcp' --format=value'(project_id)')
 gcloud config set project $PROJECT
 
-export HYBRID_HOME=$PWD
+export HYBRID_HOME=$PROJECT
 export REGION=europe-west1
 
 export RUNTIME_IP=$(gcloud compute addresses describe runtime-ip --region $REGION --format='value(address)')

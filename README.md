@@ -15,6 +15,10 @@
 
 [ ] for some vars like REGION, ZONE, make defaults if not defined
 
+## Diagnostics
+> WARNING: Especially if you want to use the script out-of-band, make a notice that the script switching Audit log of Apigee APIs to be logged in StackDriver. It is useful for capturing any transient error information of requests to the apigee.googleapis.com.
+
+
 ## Install Runtime
 
 The `rewind.sh` script is self-containted. It works in a QwikLabs or a GCP project vanilla environment.

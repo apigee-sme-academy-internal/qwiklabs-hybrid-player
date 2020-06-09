@@ -68,9 +68,26 @@ echo "Enabling required APIs..."
 gcloud services enable compute.googleapis.com container.googleapis.com apigee.googleapis.com apigeeconnect.googleapis.com cloudresourcemanager.googleapis.com
 
 
+echo "Enabling Audit Logs..."
+
+export AUDITCONFIGS='[
+    {
+      "auditLogConfigs": [
+        { "logType": "ADMIN_READ" },
+        { "logType": "DATA_READ"  },
+        { "logType": "DATA_WRITE" }
+      ],
+      "service": "apigee.googleapis.com"
+    }
+  ]'
+
+gcloud projects get-iam-policy $PROJECT --format=json | jq .auditConfigs="$AUDITCONFIGS" > $HYBRID_HOME/iam-policy.json
+gcloud projects set-iam-policy $PROJECT $HYBRID_HOME/iam-policy.json
+
+
 #CLUSTER_EXISTS=$(gcloud container clusters list --project $PROJECT --zone $ZONE --filter='name=hybrid-cluster')
 #if [ -z "CLUSTER_EXISTS" ]; then
-#echo "Starting cluster creation..."
+echo "Forking cluster creation..."
     ## FORK: Create cluster
 set +e
     gcloud container clusters create $CLUSTER --machine-type "n1-standard-4" --num-nodes "3" --cluster-version "1.14" --zone $ZONE --async

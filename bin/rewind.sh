@@ -123,6 +123,19 @@ EOT
 wait_for_ready "\"$ENV\"" 'curl --silent -H "Authorization: Bearer $(token)" -H "Content-Type: application/json"  https://apigee.googleapis.com/v1/organizations/$ORG/environments/$ENV | jq ".name"' "Environment $ENV of Organization $ORG is created." 
 
 
+## FORK: ORG Hybrid Player Hook
+if [ ! -z "$HPH_ORGENV_CMD" ]; then
+(
+    if [ ! -z "$HPH_ORGENV_DIR" ]; then
+        cd $HPH_ORGENV_DIR
+    fi
+ls
+    $HPH_ORGENV_CMD
+)
+fi
+
+
+
 echo "Cluster creation..."
 ## JOIN: cluster
 wait_for_ready "RUNNING" 'gcloud container clusters describe hybrid-cluster --zone $ZONE --format="value(status)"' 'The cluster is ready.'
@@ -292,3 +305,18 @@ wait_for_ready "0" '(cd $APIGEECTL_HOME; apigeectl check-ready  -f $HYBRID_HOME/
 
 wait_for_ready "0" '(cd $APIGEECTL_HOME; apigeectl check-ready  -f $HYBRID_HOME/runtime-config.yaml); echo $?' "apigeectl apply: done."
 
+
+# TODO: [ ] verify and if yes, fork next after mart is ready
+# TODO: add JOIN for both HPH hooks
+
+## FORK: RUNTIME Hybrid Player Hook
+if [ ! -z "$HPH_RUNTIME_CMD" ]; then
+(
+    if [ ! -z "$HPH_RUNTIME_DIR" ]; then
+echo `eval $HPH_RUNTIME_DIR`
+        cd $HPH_RUNTIME_DIR
+    fi
+ls
+    $HPH_RUNTIME_CMD
+)
+fi

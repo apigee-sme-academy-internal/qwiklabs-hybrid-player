@@ -3,6 +3,8 @@
 ## TODO:
 [ ] provide logical and debug output for operations as required
 
+[ ] rewind hooks.
+
 [ ] 'harden' the script
 
 [x] next step: deploy the ping proxy
@@ -14,6 +16,8 @@
 [ ] fix envsubst 0b file creation
 
 [ ] for some vars like REGION, ZONE, make defaults if not defined
+
+
 
 ## Diagnostics
 > WARNING: Especially if you want to use the script out-of-band, make a notice that the script switching Audit log of Apigee APIs to be logged in StackDriver. It is useful for capturing any transient error information of requests to the apigee.googleapis.com.
@@ -90,6 +94,36 @@ time rewind.sh | tee $HYBRID_HOME/rewind.log
 ?. Deploy test proxy
 ```
 time $PLAYER_HOME/proxies/deploy.sh |  tee $HYBRID_HOME/deploy.log
+```
+
+## HPH Hooks
+
+There are two hooks to add some custom processing after specific events happend.
+
+HPH stands for Hybrid Player Hook
+
+The events are:
+* ORGENV: after the Hybrid organization and Environment is created;
+* RUNTIME: when runtime is created and ready.
+
+
+If HPH_<hook>_DIR is defined (optional), then cd to _DIR is performed before _CMD is executed.
+
+TODO: [ ] _PROBE and _SIGNAL are not added yet.
+
+Instead of using manual Deploy test proxy as per previous sectin, you can configure hook to do it automatically. This will also happen while cluster continues to be created.
+
+Example of usage:
+```
+export HPH_ORGENV_DIR=~/qwiklabs-hybrid-player/proxies
+export HPH_ORGENV_CMD=./deploy.sh
+export HPH_ORGENV_PROBE=
+export HPH_ORGENV_SIGNAL=
+
+export HPH_RUNTIME_DIR=
+export HPH_RUNTIME_CMD=ls
+export HPH_RUNTIME_PROBE=
+export HPH_RUNTIME_SIGNAL=
 ```
 
 

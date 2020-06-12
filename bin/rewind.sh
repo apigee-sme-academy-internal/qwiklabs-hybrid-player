@@ -129,7 +129,6 @@ if [ ! -z "$HPH_ORGENV_CMD" ]; then
     if [ ! -z "$HPH_ORGENV_DIR" ]; then
         cd $HPH_ORGENV_DIR
     fi
-ls
     $HPH_ORGENV_CMD
 )
 fi
@@ -316,7 +315,6 @@ if [ ! -z "$HPH_RUNTIME_CMD" ]; then
 echo `eval $HPH_RUNTIME_DIR`
         cd $HPH_RUNTIME_DIR
     fi
-ls
     $HPH_RUNTIME_CMD
 )
 fi

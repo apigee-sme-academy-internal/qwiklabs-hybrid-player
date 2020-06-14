@@ -143,6 +143,16 @@ wait_for_ready "RUNNING" 'gcloud container clusters describe hybrid-cluster --zo
 
 gcloud container clusters get-credentials $CLUSTER --zone $ZONE
 
+## FORK: Custer Hybrid Player Hook
+if [ ! -z "$HPH_CLUSTER_CMD" ]; then
+(
+    if [ ! -z "$HPH_CLUSTER_DIR" ]; then
+        cd $HPH_CLUSTER_DIR
+    fi
+    $HPH_CLUSTER_CMD
+)
+fi
+
 set +e
 kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
 set -e

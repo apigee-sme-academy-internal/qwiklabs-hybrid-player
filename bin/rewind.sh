@@ -328,3 +328,18 @@ echo `eval $HPH_RUNTIME_DIR`
     $HPH_RUNTIME_CMD
 )
 fi
+
+# Join the runtime hook
+if [ ! -z "$HPH_RUNTIME_SIGNAL" ] && [ ! -z "$HPH_RUNTIME_PROBE" ] ; then
+  wait_for_ready "$HPH_RUNTIME_SIGNAL" "$HPH_RUNTIME_PROBE" "Runtime hook completed."
+fi
+
+# Join the cluster hook
+if [ ! -z "$HPH_CLUSTER_SIGNAL" ] && [ ! -z "$HPH_CLUSTER_PROBE" ] ; then
+  wait_for_ready "$HPH_CLUSTER_SIGNAL" "$HPH_CLUSTER_PROBE" "Runtime hook completed."
+fi
+
+# Join the org/env hook
+if [ ! -z "$HPH_ORGENV_SIGNAL" ] && [ ! -z "$HPH_ORGENV_PROBE" ] ; then
+  wait_for_ready "$HPH_ORGENV_SIGNAL" "$HPH_ORGENV_PROBE" "Runtime hook completed."
+fi

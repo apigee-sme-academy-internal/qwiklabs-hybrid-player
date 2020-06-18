@@ -185,12 +185,14 @@ if [ "$RUNTIME_IP" = "" ]; then
 fi
 export RUNTIME_IP
 
-export RUNTIME_HOST_ALIAS=api.exco.com
-export RUNTIME_SSL_CERT=$HYBRID_HOME/exco-hybrid-crt.pem
-export RUNTIME_SSL_KEY=$HYBRID_HOME/exco-hybrid-key.pem
+export RUNTIME_HOST_ALIAS=${RUNTIME_HOST_ALIAS:-api.exco.com}
+export RUNTIME_SSL_CERT=${RUNTIME_SSL_CERT:-$HYBRID_HOME/exco-hybrid-crt.pem}
+export RUNTIME_SSL_KEY=${RUNTIME_SSL_KEY:-$HYBRID_HOME/exco-hybrid-key.pem}
 
-openssl req -x509 -out $RUNTIME_SSL_CERT -keyout $RUNTIME_SSL_KEY -newkey rsa:2048 -nodes -sha256 -subj '/CN=api.exco.com' -extensions EXT -config <( printf "[dn]\nCN=api.exco.com\n[req]\ndistinguished_name=dn\n[EXT]\nbasicConstraints=critical,CA:TRUE,pathlen:1\nsubjectAltName=DNS:api.exco.com\nkeyUsage=digitalSignature,keyCertSign\nextendedKeyUsage=serverAuth")
-
+if [[ ! -f "${RUNTIME_SSL_CERT}" ]] || [ ! -f "${RUNTIME_SSL_KEY}" ]; then
+  echo "Using self-signed certificate for ${RUNTIME_HOST_ALIAS} ..."
+  openssl req -x509 -out $RUNTIME_SSL_CERT -keyout $RUNTIME_SSL_KEY -newkey rsa:2048 -nodes -sha256 -subj '/CN=api.exco.com' -extensions EXT -config <( printf "[dn]\nCN=api.exco.com\n[req]\ndistinguished_name=dn\n[EXT]\nbasicConstraints=critical,CA:TRUE,pathlen:1\nsubjectAltName=DNS:api.exco.com\nkeyUsage=digitalSignature,keyCertSign\nextendedKeyUsage=serverAuth")
+fi
 
 #
 # mart (to be ignored)

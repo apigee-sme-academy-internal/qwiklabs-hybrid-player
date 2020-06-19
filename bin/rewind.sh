@@ -207,9 +207,19 @@ if [ "$MART_IP" = "" ]; then
 fi
 export MART_IP
 
-export MART_HOST_ALIAS=mart.exco.com
-export MART_SSL_CERT=$HYBRID_HOME/exco-hybrid-crt.pem
-export MART_SSL_KEY=$HYBRID_HOME/exco-hybrid-key.pem
+export MART_HOST_ALIAS=${MART_HOST_ALIAS:-mart.exco.com}
+export MART_SSL_CERT=${MART_SSL_CERT:-$RUNTIME_SSL_CERT}
+export MART_SSL_KEY=${MART_SSL_KEY:-$RUNTIME_SSL_KEY}
+
+if [ ! -z "$HPH_IPS_CMD" ]; then
+(
+    if [ ! -z "$HPH_IPS_DIR" ]; then
+echo `eval $HPH_IPS_DIR`
+        cd $HPH_IPS_DIR
+    fi
+    $HPH_IPS_CMD
+)
+fi
 
 
 

@@ -27,7 +27,7 @@ mkdir -p $HYBRID_HOME
 
 
 export ORG=$PROJECT
-export ENV=test
+export ENV=${ENV:-test}
 
 gcloud config set project $PROJECT > /dev/null
 

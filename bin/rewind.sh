@@ -124,7 +124,7 @@ wait_for_ready "\"$ENV\"" 'curl --silent -H "Authorization: Bearer $(token)" -H 
 
 
 ## FORK-NOHUP-WAIT: ORGENV Hybrid Player Hook
-export HPH_ORGENV_LOG=${HPH_ORGENV_LOG:-$HYBRID-HOME/hph-orgenv.log}
+export HPH_ORGENV_LOG=${HPH_ORGENV_LOG:-$HYBRID_HOME/hph-orgenv.log}
 nohup bash <<EOS &> $HPH_ORGENV_LOG &
 if [ ! -z "$HPH_ORGENV_CMD" ]; then
 (
@@ -147,7 +147,7 @@ wait_for_ready "RUNNING" 'gcloud container clusters describe hybrid-cluster --zo
 gcloud container clusters get-credentials $CLUSTER --zone $ZONE
 
 ## FORK-NOHUP-WAIT: CLUSTER Hybrid Player Hook
-export HPH_CLUSTER_LOG=${HPH_CLUSTER_LOG:-$HYBRID-HOME/hph-cluster.log}
+export HPH_CLUSTER_LOG=${HPH_CLUSTER_LOG:-$HYBRID_HOME/hph-cluster.log}
 nohup bash <<EOS &> $HPH_CLUSTER_LOG &
 if [ ! -z "$HPH_CLUSTER_CMD" ]; then
 (
@@ -220,7 +220,7 @@ export MART_SSL_KEY=${MART_SSL_KEY:-$RUNTIME_SSL_KEY}
 
 
 ## FORK-NOHUP-WAIT: IPS Hybrid Player Hook
-export HPH_IPS_LOG=${HPH_IPS_LOG:-$HYBRID-HOME/hph-ips.log}
+export HPH_IPS_LOG=${HPH_IPS_LOG:-$HYBRID_HOME/hph-ips.log}
 nohup bash <<EOS &> $HPH_IPS_LOG &
 if [ ! -z "$HPH_IPS_CMD" ]; then
 (
@@ -335,7 +335,7 @@ wait_for_ready "0" '(cd $APIGEECTL_HOME; apigeectl check-ready  -f $HYBRID_HOME/
 
 
 ## FORK-NOHUP-WAIT: RUNTIME Hybrid Player Hook
-export HPH_RUNTIME_LOG=${HPH_RUNTIME_LOG:-$HYBRID-HOME/hph-runtime.log}
+export HPH_RUNTIME_LOG=${HPH_RUNTIME_LOG:-$HYBRID_HOME/hph-runtime.log}
 nohup bash <<EOS &> $HPH_RUNTIME_LOG &
 if [ ! -z "$HPH_RUNTIME_CMD" ]; then
 (

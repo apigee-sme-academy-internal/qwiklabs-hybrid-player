@@ -104,12 +104,23 @@ HPH stands for Hybrid Player Hook
 
 The events are:
 * ORGENV: after the Hybrid organization and Environment is created;
+* CLUSTER: after Kubernetes cluster is ready;
+* IPS: ;
 * RUNTIME: when runtime is created and ready.
 
+### Hook Environment Variable
 
 If HPH_<hook>_DIR is defined (optional), then cd to _DIR is performed before _CMD is executed.
 
-TODO: [ ] _PROBE and _SIGNAL are not added yet.
+HPH_<hook>_LOG is an optional variable that configures .log file for the hook output
+HPH_<hook>_PID is a pid of the hook process. 
+
+If required you can choreograph waits for specific hook complete before specific hook starts after using wait $HPH_<hook>_PID in your hook script code.
+
+The barrier at the end of the player script in the form of the wait statement without parameters, will wait till all outstanding hooks join.
+
+### Hook Example
+
 
 Instead of using manual Deploy test proxy as per previous sectin, you can configure hook to do it automatically. This will also happen while cluster continues to be created.
 
@@ -117,13 +128,9 @@ Example of usage:
 ```
 export HPH_ORGENV_DIR=~/qwiklabs-hybrid-player/proxies
 export HPH_ORGENV_CMD=./deploy.sh
-export HPH_ORGENV_PROBE=
-export HPH_ORGENV_SIGNAL=
 
 export HPH_RUNTIME_DIR=
 export HPH_RUNTIME_CMD=ls
-export HPH_RUNTIME_PROBE=
-export HPH_RUNTIME_SIGNAL=
 ```
 
 

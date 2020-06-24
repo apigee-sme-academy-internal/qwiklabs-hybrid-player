@@ -123,9 +123,7 @@ EOT
 wait_for_ready "\"$ENV\"" 'curl --silent -H "Authorization: Bearer $(token)" -H "Content-Type: application/json"  https://apigee.googleapis.com/v1/organizations/$ORG/environments/$ENV | jq ".name"' "Environment $ENV of Organization $ORG is created." 
 
 
-## FORK-NOHUP-WAIT: ORGENV Hybrid Player Hook
-export HPH_ORGENV_LOG=${HPH_ORGENV_LOG:-$HYBRID_HOME/hph-orgenv.log}
-nohup bash <<EOS &> $HPH_ORGENV_LOG &
+## FORK: ORG Hybrid Player Hook
 if [ ! -z "$HPH_ORGENV_CMD" ]; then
 (
     if [ ! -z "$HPH_ORGENV_DIR" ]; then
@@ -134,8 +132,7 @@ if [ ! -z "$HPH_ORGENV_CMD" ]; then
     $HPH_ORGENV_CMD
 )
 fi
-EOS
-export HPH_ORGENV_PID=$!
+
 
 
 echo "Cluster creation..."
@@ -146,9 +143,7 @@ wait_for_ready "RUNNING" 'gcloud container clusters describe hybrid-cluster --zo
 
 gcloud container clusters get-credentials $CLUSTER --zone $ZONE
 
-## FORK-NOHUP-WAIT: CLUSTER Hybrid Player Hook
-export HPH_CLUSTER_LOG=${HPH_CLUSTER_LOG:-$HYBRID_HOME/hph-cluster.log}
-nohup bash <<EOS &> $HPH_CLUSTER_LOG &
+## FORK: Custer Hybrid Player Hook
 if [ ! -z "$HPH_CLUSTER_CMD" ]; then
 (
     if [ ! -z "$HPH_CLUSTER_DIR" ]; then
@@ -157,8 +152,6 @@ if [ ! -z "$HPH_CLUSTER_CMD" ]; then
     $HPH_CLUSTER_CMD
 )
 fi
-EOS
-export HPH_CLUSTER_PID=$!
 
 set +e
 kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
@@ -218,10 +211,6 @@ export MART_HOST_ALIAS=${MART_HOST_ALIAS:-mart.exco.com}
 export MART_SSL_CERT=${MART_SSL_CERT:-$RUNTIME_SSL_CERT}
 export MART_SSL_KEY=${MART_SSL_KEY:-$RUNTIME_SSL_KEY}
 
-
-## FORK-NOHUP-WAIT: IPS Hybrid Player Hook
-export HPH_IPS_LOG=${HPH_IPS_LOG:-$HYBRID_HOME/hph-ips.log}
-nohup bash <<EOS &> $HPH_IPS_LOG &
 if [ ! -z "$HPH_IPS_CMD" ]; then
 (
     if [ ! -z "$HPH_IPS_DIR" ]; then
@@ -230,8 +219,11 @@ if [ ! -z "$HPH_IPS_CMD" ]; then
     $HPH_IPS_CMD
 )
 fi
-EOS
-export HPH_IPS_PID=$! 
+
+
+
+
+
 
 #
 # create SAs
@@ -334,9 +326,10 @@ wait_for_ready "0" '(cd $APIGEECTL_HOME; apigeectl check-ready  -f $HYBRID_HOME/
 wait_for_ready "0" '(cd $APIGEECTL_HOME; apigeectl check-ready  -f $HYBRID_HOME/runtime-config.yaml); echo $?' "apigeectl apply: done."
 
 
-## FORK-NOHUP-WAIT: RUNTIME Hybrid Player Hook
-export HPH_RUNTIME_LOG=${HPH_RUNTIME_LOG:-$HYBRID_HOME/hph-runtime.log}
-nohup bash <<EOS &> $HPH_RUNTIME_LOG &
+# TODO: [ ] verify and if yes, fork next after mart is ready
+# TODO: add JOIN for both HPH hooks
+
+## FORK: RUNTIME Hybrid Player Hook
 if [ ! -z "$HPH_RUNTIME_CMD" ]; then
 (
     if [ ! -z "$HPH_RUNTIME_DIR" ]; then
@@ -345,9 +338,3 @@ if [ ! -z "$HPH_RUNTIME_CMD" ]; then
     $HPH_RUNTIME_CMD
 )
 fi
-EOS
-export HPH_RUNTIME_PID=$!
-
-# FORK-NOHUP-WAIT: JOIN all outstanding.
-echo "Wait till hooks finish processing..."
-wait

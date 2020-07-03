@@ -1,0 +1,43 @@
+---
+name: Lab 2
+description: Lab 2
+pass_percent: !ruby/object:BigDecimal 18:0.9e2
+notify: false
+score_completion_only: false
+steps:
+- title: Task 1
+  points: 20
+  max: 45
+  interval: 45
+  multi_region: false
+  api: GCP
+  services:
+  - ComputeV1
+  - SSH
+  method_name: step_i_check
+  code: "def step_i_check(handles, points)\r\n    gce = handles[:ComputeV1]\r\n    ssh
+    = handles[:SSH]\r\n    ret_hash = { :done => false, :score => 0 }\r\n    resp=gce.list_instances(filter:
+    'name = \"lab-startup\"')\r\n    if resp && !resp.items.blank? && resp.items.count
+    > 0\r\n        instance = resp.items.first\r\n        nn = instance.network_interfaces\r\n
+    \       nat_ip = nn[0].access_configs[0].nat_ip\r\n        ret_string = ssh.ssh_exec
+    nat_ip, 'bash ~/assessments/assessments.sh check-proxy ping'\r\n        ret_hash
+    = JSON.parse(ret_string, :symbolize_names => true)\r\n# ret_hash = { :done =>
+    false, :score => 0, :message => ret_hash }\r\n    end\r\n    return ret_hash\r\nend\r\n"
+- title: task 2
+  points: 10
+  max: 35
+  interval: 35
+  multi_region: false
+  api: GCP
+  services:
+  - ComputeV1
+  - SSH
+  method_name: step_i_check
+  code: "def step_i_check(handles, points)\r\n    gce = handles[:ComputeV1]\r\n    ssh
+    = handles[:SSH]\r\n    ret_hash = { :done => false, :score => 0 }\r\n    resp=gce.list_instances(filter:
+    'name = \"lab-startup\"')\r\n    if resp && !resp.items.blank? && resp.items.count
+    > 0\r\n        instance = resp.items.first\r\n        nn = instance.network_interfaces\r\n
+    \       nat_ip = nn[0].access_configs[0].nat_ip\r\n        ret_string = ssh.ssh_exec
+    nat_ip, 'bash ~/assessments/assessments.sh curl-proxy ping pong'\r\n        ret_hash
+    = JSON.parse(ret_string, :symbolize_names => true)\r\n# ret_hash = { :done =>
+    false, :score => 0, :message => ret_hash }\r\n    end\r\n    return ret_hash\r\nend\r\n"

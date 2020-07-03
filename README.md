@@ -1,9 +1,12 @@
 # qwiklabs-hybrid-player
 
+## For Activity Tracking Assessment coding documentation, samples and implementation instructions, see [asssessment.md](assessment.md) page.
+
+
 ## TODO:
 [ ] provide logical and debug output for operations as required
 
-[ ] rewind hooks.
+[x] rewind hooks.
 
 [ ] 'harden' the script
 
@@ -13,10 +16,12 @@
 
 [ ] probes for runtime and trace readiness
  
-[ ] fix envsubst 0b file creation
+[x] fix envsubst 0b file creation
 
-[ ] for some vars like REGION, ZONE, make defaults if not defined
+[x] for some vars like REGION, ZONE, make defaults if not defined
 
+[ ] assessment: poc
+[ ] assessment: lab implementation
 
 
 ## Diagnostics

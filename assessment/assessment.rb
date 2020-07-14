@@ -38,3 +38,9 @@ def step_i_check(handles, points)
     end
     return ret_hash
 end
+
+
+## kubectl-check
+
+ret_string = ssh.ssh_exec nat_ip, 'bash ~/assessment/assessment.sh kubectl-check "kubectl -n apigee get secret $PROJECT-test-policy-secret --no-headers"' '$PROJECT-test-policy-secret'
+

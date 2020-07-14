@@ -42,10 +42,7 @@ response=$(curl --silent -H "Authorization: Bearer $(token)" https://apigee.goog
     else
       echo "{ \"done\": false, \"score\": 0, \"message\": \"Cannot find proxy $API\"}"
     fi
-fi
- 
- 
-if [ "$check" == "curl-proxy" ]; then
+elif [ "$check" == "curl-proxy" ]; then
     prefix=$2
     expected=$3
 
@@ -59,4 +56,18 @@ if [ "$check" == "curl-proxy" ]; then
       echo "{ \"done\": false, \"score\": 0, \"message\": \"Try harder\"}"
     fi
 
+elif [ "$check" == "kubectl-check" ]; then
+    prefix=$2
+    expected=$3
+
+    response=$(kubectl -n apigee get secret)
+
+    if [[ "$response" == *"$expected"* ]]; then
+#      message="Well done!"
+message=$response
+      echo "{ \"done\": true, \"score\": 10, \"message\": \"$message\" }"
+
+    else
+      echo "{ \"done\": false, \"score\": 0, \"message\": \"Try harder\"}"
+    fi
 fi

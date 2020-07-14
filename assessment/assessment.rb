@@ -41,6 +41,20 @@ end
 
 
 ## kubectl-check
-
-ret_string = ssh.ssh_exec nat_ip, 'bash ~/assessment/assessment.sh kubectl-check "kubectl -n apigee get secret $PROJECT-test-policy-secret --no-headers"' '$PROJECT-test-policy-secret'
-
+## Activity Tracking: proxy exists
+# deploy ping proxy
+def step_i_check(handles, points)
+    gce = handles[:ComputeV1]
+    ssh = handles[:SSH]
+    ret_hash = { :done => false, :score => 0 }
+    resp=gce.list_instances(filter: 'name = "lab-startup"')
+    if resp && !resp.items.blank? && resp.items.count > 0
+        instance = resp.items.first
+        nn = instance.network_interfaces
+        nat_ip = nn[0].access_configs[0].nat_ip
+        ret_string = ssh.ssh_exec nat_ip, "bash ~/assessment/assessment.sh kubectl-check 'kubectl -n apigee get secret \$PROJECT-test-policy-secretx --no-headers' '\$PROJECT-test-policy-secret'"
+        ret_hash = JSON.parse(ret_string, :symbolize_names => true)
+# ret_hash = { :done => false, :score => 0, :message => ret_hash }
+    end
+    return ret_hash
+end

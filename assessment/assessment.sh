@@ -10,7 +10,8 @@ function token {
   local access_token; 
   access_token="$(gcloud config config-helper --force-auth-refresh 2>/dev/null | grep access_token | grep -o -E '[^ ]+$')"; 
   if [ -z "$access_token" ]; then
-    gcloud auth activate-service-account $PROJECT_SERVICE_ACCOUNT --key-file=$PROJECT_SERVICE_ACCOUNT_KEY_FILE 2>/dev/null ;
+    gcloud auth activate-service-account $PROJECT_SERVICE_ACCOUNT --key-file=$PROJECT_SERVICE_ACCOUNT_KEY_FILE 2>/dev/null;
+    gcloud container clusters get-credentials hybrid-cluster --zone=$CLUSTER_ZONE 2>/dev/null;
     access_token="$(gcloud config config-helper --force-auth-refresh | grep access_token | grep -o -E '[^ ]+$')"; 
   fi;  
   echo "$access_token";  
@@ -57,17 +58,31 @@ elif [ "$check" == "curl-proxy" ]; then
     fi
 
 elif [ "$check" == "kubectl-check" ]; then
-    prefix=$2
-    expected=$3
+    cmd=`eval echo "$2"`
+    expected=`eval echo "$3"`
 
-    response=$(kubectl -n apigee get secret)
+    # auth guard
+    token=$(token)
+    
+    response=`$cmd`
 
     if [[ "$response" == *"$expected"* ]]; then
-#      message="Well done!"
-message=$response
-      echo "{ \"done\": true, \"score\": 10, \"message\": \"$message\" }"
+      message="Well Done!"
+      cat <<EOT
+{ 
+  "done": true, 
+  "score": 10,
+  "message": "$message"
+}
+EOT
 
     else
-      echo "{ \"done\": false, \"score\": 0, \"message\": \"Try harder\"}"
+      cat <<EOT
+{ 
+  "done": false,
+  "score": 0,
+  "message": "Try harder!"
+}
+EOT
     fi
 fi

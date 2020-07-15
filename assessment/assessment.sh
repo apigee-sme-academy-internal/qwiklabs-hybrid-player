@@ -10,7 +10,7 @@ function token {
   local access_token; 
   access_token="$(gcloud config config-helper --force-auth-refresh 2>/dev/null | grep access_token | grep -o -E '[^ ]+$')"; 
   if [ -z "$access_token" ]; then
-    gcloud auth activate-service-account $PROJECT_SERVICE_ACCOUNT --key-file=$PROJECT_SERVICE_ACCOUNT_KEY_FILE 2>/dev/null;
+    gcloud auth activate-service-account --key-file=<(echo ${PROJECT_SERVICE_ACCOUNT_JSON}) 2>/dev/null;
     gcloud container clusters get-credentials hybrid-cluster --zone=$CLUSTER_ZONE 2>/dev/null;
     access_token="$(gcloud config config-helper --force-auth-refresh | grep access_token | grep -o -E '[^ ]+$')"; 
   fi;  

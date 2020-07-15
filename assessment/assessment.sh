@@ -44,7 +44,7 @@ function check_env_ready() {
 if [ "$check" == "check-org-ready" ]; then
 
     check_result=$(check_org_ready)
-    if [[ $check_result ]]; then
+    if [[ $check_result -eq 0 ]]; then
 
       message="Well done!"
       echo "{ \"done\": true, \"score\": 10, \"message\": \"Org is READY\" }"
@@ -59,8 +59,8 @@ elif [ "$check" == "check-lab-ready" ]; then
     total=2
 
 
-    if [[  `check_org_ready` ]]; then let score++; fi
-    if [[  `check_env_ready` ]]; then let score++; fi
+    if [[ `check_org_ready` -eq 0 ]]; then let score++; fi
+    if [[  `check_env_ready` -eq 0 ]]; then let score++; fi
 
     if [[ $score -eq $total ]]; then
 

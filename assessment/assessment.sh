@@ -19,7 +19,62 @@ function token {
 export -f token
 
 
-if [ "$check" == "check-proxy" ]; then
+function check_org_ready() {
+
+    local response=$(curl --silent -H "Authorization: Bearer $(token)" https://apigee.googleapis.com/v1/organizations/$ORG)
+
+    local ret=$(echo $response | jq --raw-output ".name")
+
+    [[ "$ret" == "$ORG" ]]
+    echo $?
+}
+
+
+function check_env_ready() {
+
+    local response=$(curl --silent -H "Authorization: Bearer $(token)" https://apigee.googleapis.com/v1/organizations/$ORG/environments/$ENV)
+    local ret=$(echo $response | jq --raw-output ".name")
+
+    [[ "$ret" == "$ENV" ]]
+    echo $?
+}
+
+
+
+if [ "$check" == "check-org-ready" ]; then
+
+    check_result=$(check_org_ready)
+    if [[ $check_result ]]; then
+
+      message="Well done!"
+      echo "{ \"done\": true, \"score\": 10, \"message\": \"Org is READY\" }"
+
+    else
+      echo "{ \"done\": false, \"score\": 0, \"message\": \"Org is NOT READY\"}"
+    fi
+
+elif [ "$check" == "check-lab-ready" ]; then
+
+    score=0
+    total=2
+
+
+    if [[  `check_org_ready` ]]; then let score++; fi
+    if [[  `check_env_ready` ]]; then let score++; fi
+
+    if [[ $score -eq $total ]]; then
+
+      echo "{ \"done\": true, \"score\": 10, \"message\": \"The Lab is Ready\" }"
+
+    else
+      echo "{ \"done\": false, \"score\": 0, \"message\": \"Setting up your lab: $score out of $total...\"}"
+    fi
+
+
+
+
+
+elif [ "$check" == "check-proxy" ]; then
 
 export API=$2
 export REV=1

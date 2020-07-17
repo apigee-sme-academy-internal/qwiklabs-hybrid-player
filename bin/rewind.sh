@@ -100,7 +100,7 @@ gcloud projects set-iam-policy $PROJECT $HYBRID_HOME/iam-policy.json
 echo "Forking cluster creation..."
     ## FORK: Create cluster
 set +e
-    tracker begin hybrid-cluster "Creating GKE cluster for Apigee Hybrid"
+    tracker begin hybrid-cluster "Creating GKE cluster for Apigee hybrid"
     gcloud container clusters create $CLUSTER --machine-type "n1-standard-4" --num-nodes "3" --cluster-version "1.14" --zone $ZONE --async
 set -e
 #fi
@@ -176,7 +176,7 @@ set -e
 
 
 (
-tracker begin get-hybrid "Downloading Apigee Hybrid installer ($HYBRID_VERSION)"
+tracker begin get-hybrid "Downloading Apigee hybrid installer ($HYBRID_VERSION)"
 cd $HYBRID_HOME
 curl -LO https://storage.googleapis.com/apigee-public/apigee-hybrid-setup/$HYBRID_VERSION/$HYBRID_TARBALL
 

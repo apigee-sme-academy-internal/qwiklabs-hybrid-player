@@ -10,6 +10,11 @@ app.get('/date', async (req, res) => {
     res.send( date )
 })
 
+app.get('/checkproxypolicy', async (req, res) => {
+    const result = await at.checkproxypolicy();
+
+    res.send( result )
+})
 
 app.get('/kubectl', async (req, res) => {
     const kubectl = await at.kubectl();

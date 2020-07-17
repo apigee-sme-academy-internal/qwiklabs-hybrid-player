@@ -1,5 +1,8 @@
 #!/bin/bash
 
+exec 1> >(tee >(logger -t $(basename $0)))
+exec 2> >(tee >(logger -s -t $(basename $0)))
+
 BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" 
 
 source $BASEDIR/assessment.env

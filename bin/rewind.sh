@@ -254,7 +254,7 @@ fi
 #
 # create SAs
 #
-tracker begin hybrid-sa "Creating service accounts for Apigee hyrbid"
+tracker begin hybrid-sa "Creating service accounts for Apigee hybrid"
 export SA_DIR=$HYBRID_HOME/service-accounts
 for c in apigee-cassandra apigee-logger apigee-mart apigee-metrics apigee-synchronizer apigee-udca; do
 

@@ -74,7 +74,7 @@ function tracker() {
 export -f tracker
 
 echo "Enabling required APIs..."
-tracker begin enable-googleapis "Enabling Google APIs for Apigee hybrid"
+tracker begin enable-googleapis "Enabling Google APIs for Apigee hybrid" 30
 gcloud services enable compute.googleapis.com container.googleapis.com apigee.googleapis.com apigeeconnect.googleapis.com cloudresourcemanager.googleapis.com
 tracker end enable-googleapis
 
@@ -100,13 +100,13 @@ gcloud projects set-iam-policy $PROJECT $HYBRID_HOME/iam-policy.json
 echo "Forking cluster creation..."
     ## FORK: Create cluster
 set +e
-    tracker begin hybrid-cluster "Creating GKE cluster for Apigee hybrid"
+    tracker begin hybrid-cluster "Creating GKE cluster for Apigee hybrid" 180
     gcloud container clusters create $CLUSTER --machine-type "n1-standard-4" --num-nodes "3" --cluster-version "1.14" --zone $ZONE --async
 set -e
 #fi
 
 # create organization
-tracker begin apigee-org "Creating Apigee organization"
+tracker begin apigee-org "Creating Apigee organization" 60
 
 curl -H "Authorization: Bearer $(token)" -H "Content-Type:application/json"  "https://apigee.googleapis.com/v1/organizations?parent=projects/$PROJECT" --data-binary @- <<EOT
 {
@@ -125,7 +125,7 @@ tracker end apigee-org
  
 
 # Create environment
-tracker begin apigee-env "Creating Apigee environment"
+tracker begin apigee-env "Creating Apigee environment" 15
 curl -H "Authorization: Bearer $(token)" -H "Content-Type: application/json"  https://apigee.googleapis.com/v1/organizations/$PROJECT/environments --data-binary @- <<EOT
 {
   "name": "$ENV",
@@ -176,7 +176,7 @@ set -e
 
 
 (
-tracker begin get-hybrid "Downloading Apigee hybrid installer ($HYBRID_VERSION)"
+tracker begin get-hybrid "Downloading Apigee hybrid installer ($HYBRID_VERSION)" 10
 cd $HYBRID_HOME
 curl -LO https://storage.googleapis.com/apigee-public/apigee-hybrid-setup/$HYBRID_VERSION/$HYBRID_TARBALL
 
@@ -197,7 +197,7 @@ export PATH=$APIGEECTL_HOME:$PATH
 # api endpoint router ip
 
 set +e
-tracker begin get-runtime-ip "Creating GCP IP for Apigee runtime"
+tracker begin get-runtime-ip "Creating GCP IP for Apigee runtime" 10
 RUNTIME_IP=$(gcloud compute addresses describe runtime-ip --region $REGION --format='value(address)')
 set -e
 if [ "$RUNTIME_IP" = "" ]; then
@@ -223,7 +223,7 @@ fi
 #
 
 set +e
-tracker begin get-mart-ip "Creating GCP IP for Apigee MART"
+tracker begin get-mart-ip "Creating GCP IP for Apigee MART" 10
 MART_IP=$(gcloud compute addresses describe mart-ip --region $REGION --format='value(address)')
 set -e
 if [ "$MART_IP" = "" ]; then
@@ -254,7 +254,7 @@ fi
 #
 # create SAs
 #
-tracker begin hybrid-sa "Creating service accounts for Apigee hybrid"
+tracker begin hybrid-sa "Creating service accounts for Apigee hybrid" 60
 export SA_DIR=$HYBRID_HOME/service-accounts
 for c in apigee-cassandra apigee-logger apigee-mart apigee-metrics apigee-synchronizer apigee-udca; do
 
@@ -346,12 +346,12 @@ ingress:
     loadBalancerIP: $MART_IP
 EOT
 
-tracker begin hybrid-runtime "Initializing Apigee hybrid runtime"
+tracker begin hybrid-runtime "Initializing Apigee hybrid runtime" 120
 (cd $APIGEECTL_HOME; apigeectl init -f $HYBRID_HOME/runtime-config.yaml)
 wait_for_ready "0" '(cd $APIGEECTL_HOME; apigeectl check-ready  -f $HYBRID_HOME/runtime-config.yaml); echo $?' "apigeectl init: done."
 tracker end hybrid-runtime
 
-tracker begin hybrid-ready "Waiting Apigee hybrid runtime to be ready"
+tracker begin hybrid-ready "Waiting Apigee hybrid runtime to be ready" 300
 (cd $APIGEECTL_HOME; apigeectl apply -f $HYBRID_HOME/runtime-config.yaml)
 wait_for_ready "0" '(cd $APIGEECTL_HOME; apigeectl check-ready  -f $HYBRID_HOME/runtime-config.yaml); echo $?' "apigeectl apply: done."
 tracker end hybrid-ready

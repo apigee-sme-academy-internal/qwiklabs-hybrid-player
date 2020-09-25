@@ -111,6 +111,7 @@ tracker begin apigee-org "Creating Apigee organization" 60
 curl -H "Authorization: Bearer $(token)" -H "Content-Type:application/json"  "https://apigee.googleapis.com/v1/organizations?parent=projects/$PROJECT" --data-binary @- <<EOT
 {
     "name": "$PROJECT",
+    "runtimeType": "HYBRID",
     "display_name": "$PROJECT",
     "description": "Qwiklab student org $PROJECT",
     "analyticsRegion": "$AX_REGION"
